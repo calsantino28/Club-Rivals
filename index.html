@@ -550,9 +550,15 @@ async function doSearch(){
   try{
     const teams = await searchTeams(q);
     if(teams.length===0){ hint.textContent = 'No clubs found — try the full name.'; return; }
+    
+    // Prioritize exact name matches, then show rest
+    const exactMatches = teams.filter(t => t.team.name.toLowerCase() === q.toLowerCase());
+    const otherMatches = teams.filter(t => t.team.name.toLowerCase() !== q.toLowerCase());
+    const sorted = [...exactMatches, ...otherMatches];
+    
     hint.textContent = '';
     resultsEl.style.display = 'block';
-    resultsEl.innerHTML = teams.slice(0,10).map(t => `
+    resultsEl.innerHTML = sorted.slice(0,10).map(t => `
       <div class="search-result" data-id="${t.team.id}">
         <img src="${esc(t.team.logo)}" alt=""><span>${esc(t.team.name)}</span><span class="sr-league">${esc(t.team.country||'')}</span>
       </div>
