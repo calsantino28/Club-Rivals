@@ -58,7 +58,7 @@
   .crest-fallback{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;color:#fff;font-size:15px;overflow:hidden;}
   .crest-fallback img{width:100%;height:100%;object-fit:contain;background:#fff;}
   .member-name{font-family:'Anton',sans-serif;font-size:17px;letter-spacing:0.3px;line-height:1.1;}
-  .club-chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:3px 8px 3px 3px;font-family:'Space Mono',monospace;font-size:11px;margin:4px 0;}
+  .club-chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:3px 8px 3px 3px;font-family:'Space Mono',monospace;font-size:11px;margin-right:6px;margin-bottom:6px;}
   .club-chip button{background:none;border:none;color:var(--chalk);padding:0;font-size:12px;cursor:pointer;}
   .club-chip button:hover{color:var(--loss);}
   .add-club-link{background:none;border:none;color:var(--pitch);font-family:'Space Mono',monospace;font-size:11px;text-decoration:underline;cursor:pointer;padding:6px 0 0;display:inline-block;}
@@ -576,6 +576,7 @@ async function confirmAdd(){
   const members = STATE.members.map(m => m.uid===currentUser.uid ? {...m, clubs:[...(m.clubs||[]), clubObj]} : m);
   await writeDoc('groups','main',{members});
 
+  // Reset UI state after writing to Firestore
   document.getElementById('clubInput').value = '';
   document.getElementById('searchResults').style.display = 'none';
   document.getElementById('searchResults').innerHTML = '';
@@ -584,6 +585,9 @@ async function confirmAdd(){
   pendingClub = null;
   hint.textContent = '';
   document.getElementById('addCard').classList.add('hidden');
+  
+  // renderAll() will be called automatically by the Firestore listener
+  // when STATE.members updates, preventing any blank page state
 }
 
 /* ---------------- Watch Hub ---------------- */
@@ -691,7 +695,7 @@ async function refreshLiveFeed(fixtureId, cA, cB){
 
   const events = (data.events || []).slice().sort((x,y)=> (x.time.elapsed||0)-(y.time.elapsed||0));
   feed.innerHTML = events.length===0 ? `<div class="no-events">No events yet.</div>` :
-    events.map(e => `<div class="event-row"><span class="event-min">${e.time.elapsed}${e.time.extra?'+'+e.time.extra:''}'</span><span class="event-icon">${eventIcon(e.type)}</span><span>${esc(e.team.name)}: ${esc(e.player.name)}</span></div>`).join('');
+    events.map(e => `<div class="event-row"><span class="event-min">${e.time.elapsed}${e.time.extra?'+'+e.time.extra:''}'</span><span class="event-icon">${eventIcon(e.type)}</span><span>${esc(e.team.name)} - ${esc(e.player.name)}${e.assist?.name ? ' (' + esc(e.assist.name) + ')' : ''}</span></div>`).join('');
 }
 
 function closeHub(){
