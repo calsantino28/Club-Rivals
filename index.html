@@ -58,7 +58,9 @@
   .crest-fallback{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;color:#fff;font-size:15px;overflow:hidden;}
   .crest-fallback img{width:100%;height:100%;object-fit:contain;background:#fff;}
   .member-name{font-family:'Anton',sans-serif;font-size:17px;letter-spacing:0.3px;line-height:1.1;}
-  .club-chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:3px 8px 3px 3px;font-family:'Space Mono',monospace;font-size:11px;margin:4px 4px 4px 0;}
+  .clubs-list{margin-top:6px;min-height:20px;}
+  .no-clubs-yet{font-family:'Space Mono',monospace;font-size:11px;color:var(--chalk);font-style:italic;}
+  .club-chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:3px 8px 3px 3px;font-family:'Space Mono',monospace;font-size:11px;margin-right:6px;margin-bottom:6px;}
   .club-chip img{width:16px;height:16px;object-fit:contain;}
   .club-chip button{background:none;border:none;color:var(--chalk);padding:0;font-size:12px;cursor:pointer;}
   .club-chip button:hover{color:var(--loss);}
@@ -67,7 +69,7 @@
   .add-card{background:var(--paper);border:1px dashed var(--rule);border-radius:2px;padding:16px;max-width:420px;margin-top:14px;}
   .add-card.hidden{display:none;}
   .field-label{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--chalk);display:block;margin-bottom:5px;}
-  input[type=text], input[type=email], input[type=password]{width:100%;font-family:'Source Serif 4',serif;font-size:15px;padding:9px 10px;border:1px solid var(--rule);background:#fff;border-radius:2px;margin-bottom:10px;}
+  input[type=text], input[type=email], input[type=password]{width:100%;font-family:'Source Serif 4',serif;font-size:15px;padding:9px 10px;border:1px solid var(--rule);background:#fff;border-radius:2px;}
   input:focus{outline:2px solid var(--amber);outline-offset:1px;}
   button{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:1px;text-transform:uppercase;background:var(--pitch);color:var(--newsprint);border:none;padding:10px 16px;border-radius:2px;cursor:pointer;}
   button:hover{background:var(--pitch-deep);}
@@ -394,6 +396,17 @@ function renderRoster(){
   if(STATE.members.length === 0){ el.innerHTML = `<div class="empty-state">Loading your roster…</div>`; return; }
   el.innerHTML = STATE.members.map(m => {
     const isYou = currentUser && m.uid === currentUser.uid;
+    const clubs = m.clubs || [];
+    const clubsHtml = clubs.length === 0 
+      ? `<div class="no-clubs-yet">No clubs yet</div>`
+      : clubs.map(c=>`
+          <span class="club-chip">
+            ${c.logo?`<img src="${esc(c.logo)}" style="width:16px;height:16px;object-fit:contain;">`:''}
+            ${esc(c.clubName)}
+            ${isYou?`<button data-remove-club="${c.clubId}" title="Remove club">✕</button>`:''}
+          </span>
+        `).join('');
+    
     return `
     <div class="member-card ${isYou?'is-you':''}">
       ${isYou?'<span class="you-tag">YOU</span>':''}
@@ -401,14 +414,8 @@ function renderRoster(){
         <div class="crest-fallback" style="background:${colorFor(m.uid)}">${initials(m.name)}</div>
         <div class="member-name">${esc(m.name)}</div>
       </div>
-      <div>
-        ${(m.clubs||[]).map(c=>`
-          <span class="club-chip">
-            ${c.logo?`<img src="${esc(c.logo)}" style="width:16px;height:16px;object-fit:contain;">`:''}
-            ${esc(c.clubName)}
-            ${isYou?`<button data-remove-club="${c.clubId}" title="Remove club">✕</button>`:''}
-          </span>
-        `).join('')}
+      <div class="clubs-list">
+        ${clubsHtml}
       </div>
       ${isYou?`<button class="add-club-link" id="addClubLink">+ add another club</button>`:''}
     </div>
@@ -613,7 +620,7 @@ async function openHub(mu){
     </div>
     <div class="hub-section">
       <div class="hub-section-label">How to watch</div>
-      <div class="watch-note">This hub isn't the broadcast — pull up the match on whatever service has it. Below is the live score and event feed pulled from the match itself, updating on its own every 45 seconds.</div>
+      <div class="watch-note">This hub isn't the broadcast — pull up the match on whatever service has it. Below is the live score and event feed pulled from the match itself, updating on its own ev[...]
     </div>
     <div class="hub-section">
       <div class="hub-section-label">Live<span id="liveUpdatedAt"></span></div>
@@ -696,7 +703,7 @@ async function refreshLiveFeed(fixtureId, cA, cB){
 
   const events = (data.events || []).slice().sort((x,y)=> (x.time.elapsed||0)-(y.time.elapsed||0));
   feed.innerHTML = events.length===0 ? `<div class="no-events">No events yet.</div>` :
-    events.map(e => `<div class="event-row"><span class="event-min">${e.time.elapsed}${e.time.extra?'+'+e.time.extra:''}'</span><span class="event-icon">${eventIcon(e.type)}</span><span>${esc(e.player.name)} ${esc(e.detail||'')}</span></div>`).join('');
+    events.map(e => `<div class="event-row"><span class="event-min">${e.time.elapsed}${e.time.extra?'+'+e.time.extra:''}'</span><span class="event-icon">${eventIcon(e.type)}</span><span>${esc(e.player?.name||'')}: ${esc(e.detail||'')}</span></div>`).join('');
 }
 
 function closeHub(){
